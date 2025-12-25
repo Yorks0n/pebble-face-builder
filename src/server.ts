@@ -91,11 +91,11 @@ const handleMultipart = async (
       }
     });
 
-    bb.on('field', (name, value) => {
+    bb.on('field', (name: string, value: string) => {
       fields[name] = value;
     });
 
-    bb.on('file', (name, file) => {
+    bb.on('file', (name: string, file: NodeJS.ReadableStream) => {
       if (name !== 'bundle') {
         file.resume();
         return;
@@ -109,13 +109,13 @@ const handleMultipart = async (
         limiter.destroy(new Error('zip exceeds size limit'));
       });
 
-      filePromise = pipeline(file, limiter, createWriteStream(zipPath)).catch((err) => {
+      filePromise = pipeline(file, limiter, createWriteStream(zipPath)).catch((err: Error) => {
         bb.destroy(err as Error);
         throw err;
       });
     });
 
-    bb.on('error', (err) => done(err as Error));
+    bb.on('error', (err: Error) => done(err));
 
     bb.on('finish', async () => {
       try {
@@ -139,11 +139,11 @@ const handleMultipart = async (
   });
 };
 
-app.get('/healthz', (_req, res) => {
+app.get('/healthz', (_req: express.Request, res: express.Response) => {
   res.status(200).send('ok');
 });
 
-app.post('/build', async (req, res) => {
+app.post('/build', async (req: express.Request, res: express.Response) => {
   if (activeBuilds >= MAX_CONCURRENCY) {
     res.status(429).json({ ok: false, error: 'too_many_requests', detail: 'max concurrency reached' });
     return;

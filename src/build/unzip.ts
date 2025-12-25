@@ -43,7 +43,7 @@ export async function safeExtractZip(
     const entries: Promise<void>[] = [];
     const stream = createReadStream(zipPath).pipe(unzipper.Parse());
 
-    stream.on('entry', (entry) => {
+    stream.on('entry', (entry: unzipper.Entry) => {
       stream.pause();
       if (finished) {
         entry.autodrain();
@@ -82,7 +82,7 @@ export async function safeExtractZip(
         await pipeline(entry, limiter, createWriteStream(resolvedPath));
         totalBytes = limiter.totalBytes;
       })()
-        .catch((err) => {
+        .catch((err: Error) => {
           if (!finished) {
             stream.destroy();
             failOnce(reject, err as Error);
@@ -105,7 +105,7 @@ export async function safeExtractZip(
         .catch((err) => failOnce(reject, err as Error));
     });
 
-    stream.on('error', (err) => failOnce(reject, err as Error));
+    stream.on('error', (err: Error) => failOnce(reject, err));
   });
 }
 

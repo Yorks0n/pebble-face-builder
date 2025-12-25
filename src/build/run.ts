@@ -70,7 +70,7 @@ export async function runPebbleBuild(
     child.stdout?.on('data', onData);
     child.stderr?.on('data', onData);
 
-    child.on('error', (err) => {
+    child.on('error', (err: Error) => {
       clearTimeout(timeout);
       if (!settled) {
         settled = true;
@@ -78,7 +78,7 @@ export async function runPebbleBuild(
       }
     });
 
-    child.on('close', (code, signal) => {
+    child.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
       clearTimeout(timeout);
       const log = Buffer.concat(logChunks).toString('utf8');
       if (settled) return;

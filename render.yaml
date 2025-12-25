@@ -8,9 +8,9 @@ services:
       apt-get install -y --no-install-recommends python3-pip python3-venv libsdl1.2debian libfdt1 &&
       pip install uv &&
       uv tool install pebble-tool &&
-      pebble sdk install latest &&
       export PATH="$HOME/.local/bin:$PATH" &&
-      pnpm install --frozen-lockfile &&
+      pebble sdk install latest &&
+      pnpm install --frozen-lockfile --prod=false &&
       pnpm build
     startCommand: pnpm start
     healthCheckPath: /healthz

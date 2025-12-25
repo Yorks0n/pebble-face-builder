@@ -15,12 +15,18 @@ importers:
         specifier: ^0.10.14
         version: 0.10.14
     devDependencies:
+      @types/busboy:
+        specifier: ^1.5.0
+        version: 1.5.0
       @types/express:
         specifier: ^4.17.21
         version: 4.17.21
       @types/node:
         specifier: ^20.11.30
         version: 20.11.30
+      @types/unzipper:
+        specifier: ^0.10.9
+        version: 0.10.9
       tsx:
         specifier: ^4.7.1
         version: 4.7.1
