@@ -13,6 +13,8 @@ import { safeExtractZip, UnzipLimitError, ZipSlipError } from './build/unzip.js'
 
 const PORT = Number(process.env.PORT || 8787);
 const MAX_CONCURRENCY = Number(process.env.MAX_CONCURRENCY || 1);
+const MAX_QUEUE = Number(process.env.MAX_QUEUE || 10);
+const DEFAULT_AVG_BUILD_SEC = Number(process.env.DEFAULT_AVG_BUILD_SEC || 60);
 const DEFAULT_TIMEOUT_SEC = Number(process.env.BUILD_TIMEOUT_SEC || 120);
 const DEFAULT_MAX_ZIP_BYTES = Number(process.env.MAX_ZIP_BYTES || 25 * 1024 * 1024);
 const DEFAULT_MAX_UNZIP_BYTES = Number(process.env.MAX_UNZIP_BYTES || 100 * 1024 * 1024);
@@ -22,11 +24,26 @@ const app = express();
 app.use(express.json({ limit: '1mb', type: ['application/json'] }));
 
 let activeBuilds = 0;
+let avgBuildMs = DEFAULT_AVG_BUILD_SEC * 1000;
+let buildSamples = 0;
+type QueueEntry = {
+  resolve: () => void;
+  reject: (err: Error) => void;
+  canceled: boolean;
+};
+const queue: QueueEntry[] = [];
 
 const parseNumber = (value: unknown, fallback: number) => {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return fallback;
   return num;
+};
+
+const estimateRetryAfterSec = () => {
+  if (MAX_CONCURRENCY <= 0) return DEFAULT_AVG_BUILD_SEC;
+  const position = queue.length + activeBuilds;
+  const estimateMs = (position / MAX_CONCURRENCY) * avgBuildMs;
+  return Math.max(1, Math.ceil(estimateMs / 1000));
 };
 
 const readLimitedStreamToFile = async (
@@ -145,13 +162,9 @@ app.get('/healthz', (_req: express.Request, res: express.Response) => {
 });
 
 app.post('/build', async (req: express.Request, res: express.Response) => {
-  if (activeBuilds >= MAX_CONCURRENCY) {
-    res.status(429).json({ ok: false, error: 'too_many_requests', detail: 'max concurrency reached' });
-    return;
-  }
-
   const jobId = randomUUID();
-  activeBuilds += 1;
+  let acquired = false;
+  let buildStart = 0;
   res.setHeader('X-Job-Id', jobId);
 
   const jobRoot = path.join('/tmp/pebbleface', jobId);
@@ -159,6 +172,20 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
   const zipPath = path.join(jobRoot, 'bundle.zip');
 
   try {
+    try {
+      await acquireSlot(req);
+      acquired = true;
+      buildStart = Date.now();
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === 'queue_full') {
+        res.setHeader('Retry-After', estimateRetryAfterSec().toString());
+        res.status(429).json({ ok: false, error: 'too_many_requests', detail: 'queue limit reached' });
+        return;
+      }
+      return;
+    }
+
     await fs.mkdir(jobRoot, { recursive: true });
 
     const query = req.query as Record<string, string | undefined>;
@@ -288,7 +315,15 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
       .setHeader('X-Build-Log-Base64', logBase64)
       .send(pbwBuffer);
   } finally {
-    activeBuilds = Math.max(activeBuilds - 1, 0);
+    if (buildStart > 0) {
+      const duration = Date.now() - buildStart;
+      buildSamples += 1;
+      const alpha = 0.2;
+      avgBuildMs = buildSamples === 1 ? duration : avgBuildMs * (1 - alpha) + duration * alpha;
+    }
+    if (acquired) {
+      releaseSlot();
+    }
     await fs.rm(jobRoot, { recursive: true, force: true });
   }
 });
@@ -296,3 +331,49 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`pebbleface-runner listening on :${PORT}`);
 });
+const acquireSlot = (req: express.Request) => {
+  if (activeBuilds < MAX_CONCURRENCY) {
+    activeBuilds += 1;
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    if (queue.length >= MAX_QUEUE) {
+      reject(new Error('queue_full'));
+      return;
+    }
+
+    const entry: QueueEntry = {
+      resolve: () => {
+        if (entry.canceled) return;
+        activeBuilds += 1;
+        resolve();
+      },
+      reject,
+      canceled: false
+    };
+
+    const onClose = () => {
+      if (entry.canceled) return;
+      const index = queue.indexOf(entry);
+      if (index !== -1) {
+        queue.splice(index, 1);
+      }
+      entry.canceled = true;
+      reject(new Error('client_disconnected'));
+    };
+
+    req.on('close', onClose);
+    queue.push(entry);
+  });
+};
+
+const releaseSlot = () => {
+  activeBuilds = Math.max(activeBuilds - 1, 0);
+  while (queue.length) {
+    const next = queue.shift();
+    if (!next || next.canceled) continue;
+    next.resolve();
+    break;
+  }
+};

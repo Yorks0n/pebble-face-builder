@@ -80,6 +80,8 @@ Environment variables:
 
 - `PORT` (default: 8787)
 - `MAX_CONCURRENCY` (default: 1)
+- `MAX_QUEUE` (default: 10)
+- `DEFAULT_AVG_BUILD_SEC` (default: 60)
 - `BUILD_TIMEOUT_SEC` (default: 120)
 - `MAX_ZIP_BYTES` (default: 26214400)
 - `MAX_UNZIP_BYTES` (default: 104857600)
@@ -88,4 +90,5 @@ Environment variables:
 
 - The service only runs `pebble build` and ignores any scripts in the bundle.
 - Zip-slip and unzip size limits are enforced before building.
+- Requests beyond `MAX_CONCURRENCY` are queued up to `MAX_QUEUE`, then return 429 with a dynamic `Retry-After` based on queue length and average build time.
 - If you need a specific CLI version, update the Dockerfile to install a pinned `pebble-tool` version via `uv tool install`.
