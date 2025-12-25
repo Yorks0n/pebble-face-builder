@@ -55,9 +55,13 @@ export async function runPebbleBuild(
     });
 
     const timeout = setTimeout(() => {
-      try {
-        process.kill(-child.pid, 'SIGKILL');
-      } catch {
+      if (child.pid) {
+        try {
+          process.kill(-child.pid, 'SIGKILL');
+        } catch {
+          child.kill('SIGKILL');
+        }
+      } else {
         child.kill('SIGKILL');
       }
       if (!settled) {

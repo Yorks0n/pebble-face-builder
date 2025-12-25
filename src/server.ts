@@ -228,7 +228,7 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
       }
 
       try {
-        const bodyStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
+        const bodyStream = Readable.fromWeb(response.body as unknown as ReadableStream<Uint8Array>);
         await readLimitedStreamToFile(bodyStream, zipPath, maxZipBytes);
       } catch {
         res.status(413).json({ ok: false, error: 'zip_too_large', detail: 'zip exceeds size limit' });

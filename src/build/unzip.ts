@@ -71,7 +71,7 @@ export async function safeExtractZip(
           return;
         }
 
-        const sizeHint = entry.vars?.uncompressedSize ?? 0;
+      const sizeHint = (entry as unknown as { vars?: { uncompressedSize?: number } }).vars?.uncompressedSize ?? 0;
         if (sizeHint > 0 && totalBytes + sizeHint > maxUnzipBytes) {
           entry.autodrain();
           throw new UnzipLimitError('unzipped data exceeds limit');
