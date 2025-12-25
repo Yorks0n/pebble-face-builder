@@ -1,18 +1,8 @@
 services:
   - type: web
     name: pebbleface-runner
-    env: node
+    env: docker
     plan: starter
-    buildCommand: >-
-      apt-get update &&
-      apt-get install -y --no-install-recommends python3-pip python3-venv libsdl1.2debian libfdt1 &&
-      pip install uv &&
-      uv tool install pebble-tool &&
-      export PATH="$HOME/.local/bin:$PATH" &&
-      pebble sdk install latest &&
-      pnpm install --frozen-lockfile --prod=false &&
-      pnpm build
-    startCommand: pnpm start
     healthCheckPath: /healthz
     envVars:
       - key: MAX_CONCURRENCY

@@ -14,6 +14,14 @@ docker build -t pebbleface-runner .
 docker run --rm -p 8787:8787 -e PORT=8787 pebbleface-runner
 ```
 
+## Render (Docker)
+
+Render 的 Native Node 环境无法运行 `apt-get` 安装系统依赖，因此需要使用 Docker 部署。
+
+1. Render 控制台将服务环境设置为 Docker。
+2. Build Command / Start Command 留空（由 Dockerfile 管理）。
+3. 重新部署即可。
+
 ## Build a Watchface
 
 ```bash
