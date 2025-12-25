@@ -3,14 +3,7 @@ FROM node:20-bookworm-slim
 ARG DEBIAN_MIRROR=deb.debian.org
 ARG DEBIAN_SECURITY_MIRROR=deb.debian.org
 
-RUN if [ -f /etc/apt/sources.list ]; then \
-    sed -i "s|http://deb.debian.org/debian|https://${DEBIAN_MIRROR}/debian|g" /etc/apt/sources.list; \
-    sed -i "s|http://deb.debian.org/debian-security|https://${DEBIAN_SECURITY_MIRROR}/debian-security|g" /etc/apt/sources.list; \
-  else \
-    sed -i "s|http://deb.debian.org/debian|https://${DEBIAN_MIRROR}/debian|g" /etc/apt/sources.list.d/debian.sources; \
-    sed -i "s|http://deb.debian.org/debian-security|https://${DEBIAN_SECURITY_MIRROR}/debian-security|g" /etc/apt/sources.list.d/debian.sources; \
-  fi \
-  && apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update \
+RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update \
   && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
