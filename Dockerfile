@@ -16,6 +16,12 @@ RUN python3 -m venv /opt/venv \
 
 ENV PATH="/opt/venv/bin:${PATH}"
 
+RUN useradd -m -u 10001 appuser
+USER appuser
+ENV HOME=/home/appuser
+RUN pebble sdk install latest
+USER root
+
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
@@ -29,9 +35,8 @@ COPY src ./src
 RUN pnpm build
 RUN pebble --version
 
-RUN useradd -m -u 10001 appuser
 USER appuser
-
+ENV HOME=/home/appuser
 ENV NODE_ENV=production
 EXPOSE 8787
 CMD ["node", "dist/server.js"]
