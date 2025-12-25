@@ -5,6 +5,7 @@ import { createWriteStream } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Readable, Transform } from 'node:stream';
+import type { ReadableStream as WebReadableStream } from 'node:stream/web';
 import { pipeline } from 'node:stream/promises';
 import { findPbw } from './build/find-pbw.js';
 import { runPebbleBuild, BuildFailedError, BuildTimeoutError } from './build/run.js';
@@ -228,7 +229,7 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
       }
 
       try {
-        const bodyStream = Readable.fromWeb(response.body as unknown as ReadableStream<Uint8Array>);
+        const bodyStream = Readable.fromWeb(response.body as unknown as WebReadableStream<Uint8Array>);
         await readLimitedStreamToFile(bodyStream, zipPath, maxZipBytes);
       } catch {
         res.status(413).json({ ok: false, error: 'zip_too_large', detail: 'zip exceeds size limit' });

@@ -1,29 +1,20 @@
-FROM node:20-bookworm-slim
-
-ARG DEBIAN_MIRROR=deb.debian.org
-ARG DEBIAN_SECURITY_MIRROR=deb.debian.org
+ARG TARGETPLATFORM=linux/amd64
+FROM --platform=$TARGETPLATFORM node:20-bookworm-slim
 
 RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update \
   && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    git \
-    ca-certificates \
-    unzip \
-    zip \
-    make \
-    gcc \
-    g++ \
-    libc6-dev \
-    libsdl1.2debian \
-    libfdt1 \
+    python3 python3-pip python3-venv \
+    git ca-certificates unzip zip \
+    make gcc g++ libc6-dev \
+    libsdl1.2debian libfdt1 \
   && rm -rf /var/lib/apt/lists/*
 
+# Install pebble-tool into a venv (not root ~/.local)
 RUN python3 -m venv /opt/venv \
-  && /opt/venv/bin/pip install --no-cache-dir uv \
-  && /opt/venv/bin/uv tool install pebble-tool \
-  && ln -s /root/.local/bin/pebble /usr/local/bin/pebble
+  && /opt/venv/bin/pip install --no-cache-dir -U pip \
+  && /opt/venv/bin/pip install --no-cache-dir pebble-tool
+
+ENV PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /app
 
@@ -36,12 +27,11 @@ COPY tsconfig.json ./
 COPY src ./src
 
 RUN pnpm build
+RUN pebble --version
 
 RUN useradd -m -u 10001 appuser
 USER appuser
 
 ENV NODE_ENV=production
-
 EXPOSE 8787
-
 CMD ["node", "dist/server.js"]

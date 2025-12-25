@@ -14,6 +14,12 @@ docker build -t pebbleface-runner .
 docker run --rm -p 8787:8787 -e PORT=8787 pebbleface-runner
 ```
 
+If you are on Apple Silicon, build with an amd64 platform to avoid Pebble CLI dependencies failing on arm64:
+
+```bash
+docker buildx build --platform linux/amd64 -t pebbleface-runner .
+```
+
 ## Render (Docker)
 
 Render 的 Native Node 环境无法运行 `apt-get` 安装系统依赖，因此需要使用 Docker 部署。

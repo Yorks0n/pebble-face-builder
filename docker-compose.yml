@@ -1,0 +1,14 @@
+services:
+  runner:
+    container_name: pebbleface-runner
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8787"
+      MAX_CONCURRENCY: "1"
+      BUILD_TIMEOUT_SEC: "120"
+      RUNNER_TOKEN: ${RUNNER_TOKEN}
+    ports:
+      - "127.0.0.1:8787:8787"
+    restart: always
