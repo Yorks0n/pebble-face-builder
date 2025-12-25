@@ -68,7 +68,6 @@ JSON body:
 ```json
 {
   "bundleUrl": "https://example.com/bundle.zip",
-  "target": "basalt",
   "timeoutSec": 120,
   "maxZipBytes": 26214400,
   "maxUnzipBytes": 104857600
