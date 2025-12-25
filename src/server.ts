@@ -22,6 +22,14 @@ const DEFAULT_MAX_UNZIP_BYTES = Number(process.env.MAX_UNZIP_BYTES || 100 * 1024
 const app = express();
 
 app.use(express.json({ limit: '1mb', type: ['application/json'] }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.info(`[request] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+  });
+  next();
+});
 
 let activeBuilds = 0;
 let avgBuildMs = DEFAULT_AVG_BUILD_SEC * 1000;
@@ -286,15 +294,19 @@ app.post('/build', async (req: express.Request, res: express.Response) => {
     try {
       const result = await runPebbleBuild(workDir, target, timeoutSec * 1000);
       log = result.log;
+      console.info(`[build] jobId=${jobId} log=${log}`);
     } catch (err) {
       if (err instanceof BuildTimeoutError) {
+        console.warn(`[build] jobId=${jobId} timeout`);
         res.status(504).json({ ok: false, error: 'build_timeout', detail: err.message });
         return;
       }
       if (err instanceof BuildFailedError) {
+        console.warn(`[build] jobId=${jobId} failed log=${err.log}`);
         res.status(500).json({ ok: false, error: 'build_failed', detail: err.message });
         return;
       }
+      console.warn(`[build] jobId=${jobId} failed detail=${(err as Error).message}`);
       res.status(500).json({ ok: false, error: 'build_failed', detail: (err as Error).message });
       return;
     }
