@@ -7,6 +7,7 @@ RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update \
   && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
+    python3-venv \
     git \
     ca-certificates \
     unzip \
@@ -19,8 +20,9 @@ RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update \
     libfdt1 \
   && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir uv \
-  && uv tool install pebble-tool \
+RUN python3 -m venv /opt/venv \
+  && /opt/venv/bin/pip install --no-cache-dir uv \
+  && /opt/venv/bin/uv tool install pebble-tool \
   && ln -s /root/.local/bin/pebble /usr/local/bin/pebble
 
 WORKDIR /app
