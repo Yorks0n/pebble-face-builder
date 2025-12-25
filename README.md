@@ -82,6 +82,7 @@ Environment variables:
 - `MAX_CONCURRENCY` (default: 1)
 - `MAX_QUEUE` (default: 10)
 - `DEFAULT_AVG_BUILD_SEC` (default: 60)
+- `RUNNER_TOKEN` (optional, if set requires `X-Runner-Token` header)
 - `BUILD_TIMEOUT_SEC` (default: 120)
 - `MAX_ZIP_BYTES` (default: 26214400)
 - `MAX_UNZIP_BYTES` (default: 104857600)

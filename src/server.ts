@@ -18,6 +18,7 @@ const DEFAULT_AVG_BUILD_SEC = Number(process.env.DEFAULT_AVG_BUILD_SEC || 60);
 const DEFAULT_TIMEOUT_SEC = Number(process.env.BUILD_TIMEOUT_SEC || 120);
 const DEFAULT_MAX_ZIP_BYTES = Number(process.env.MAX_ZIP_BYTES || 25 * 1024 * 1024);
 const DEFAULT_MAX_UNZIP_BYTES = Number(process.env.MAX_UNZIP_BYTES || 100 * 1024 * 1024);
+const RUNNER_TOKEN = process.env.RUNNER_TOKEN;
 
 const app = express();
 
@@ -170,6 +171,14 @@ app.get('/healthz', (_req: express.Request, res: express.Response) => {
 });
 
 app.post('/build', async (req: express.Request, res: express.Response) => {
+  if (RUNNER_TOKEN) {
+    const token = req.header('X-Runner-Token');
+    if (!token || token !== RUNNER_TOKEN) {
+      res.status(401).json({ ok: false, error: 'unauthorized', detail: 'invalid runner token' });
+      return;
+    }
+  }
+
   const jobId = randomUUID();
   let acquired = false;
   let buildStart = 0;
