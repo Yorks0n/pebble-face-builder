@@ -1,0 +1,29 @@
+lockfileVersion: '6.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      busboy:
+        specifier: ^1.6.0
+        version: 1.6.0
+      express:
+        specifier: ^4.19.2
+        version: 4.19.2
+      unzipper:
+        specifier: ^0.10.14
+        version: 0.10.14
+    devDependencies:
+      @types/express:
+        specifier: ^4.17.21
+        version: 4.17.21
+      @types/node:
+        specifier: ^20.11.30
+        version: 20.11.30
+      tsx:
+        specifier: ^4.7.1
+        version: 4.7.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
